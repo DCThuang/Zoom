@@ -166,9 +166,9 @@ export default function GameSetupPage() {
                         {professionRoles.map(role => (
                           <div key={role._id} className="shrink-0 w-20">
                             <div className="aspect-[3/4] bg-black rounded-lg overflow-hidden mb-1">
-                              <img 
-                                src={role.imgUrl || `https://placehold.co/300x400/222/999?text=${role.name}`} 
-                                alt={role.name} 
+                      <img 
+                        src={role.imgUrl || `https://placehold.co/300x400/222/999?text=${role.name}`} 
+                        alt={role.name} 
                                 className="w-full h-full object-cover"
                               />
                             </div>
@@ -176,7 +176,7 @@ export default function GameSetupPage() {
                             <div className="flex justify-center gap-1 mt-1">
                               <span className="text-[10px] bg-green-900/80 px-1 py-0.5 rounded text-green-300">HP:{role.hp}</span>
                             </div>
-                          </div>
+                        </div>
                         ))}
                       </div>
                     </div>

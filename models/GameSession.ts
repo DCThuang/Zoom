@@ -61,9 +61,9 @@ export interface IGameSession extends Document {
   name: string;
   campaignId: mongoose.Types.ObjectId;
   campaignName: string;
-  roleId: mongoose.Types.ObjectId; // Primary role (for backwards compat)
-  roleName: string;
-  roleImgUrl: string;
+  roleId?: mongoose.Types.ObjectId; // Primary role (for backwards compat, optional)
+  roleName?: string;
+  roleImgUrl?: string;
   
   // Multi-player support
   players: IPlayer[];

@@ -391,54 +391,54 @@ function GamePlayPageContent() {
         const roleResults = await Promise.all(rolePromises);
         
         newPlayers = roleResults.map((data, index) => {
-          if (!data.success) throw new Error('角色加载失败');
-          const role = data.data;
+        if (!data.success) throw new Error('角色加载失败');
+        const role = data.data;
           const profession = (role as any).profession || role.name;
           
           // 获取同职业的所有角色卡
           const professionRoles = allPlayerCards.filter((card: ICard) => 
             (card as any).profession === profession
           );
-          
+        
           // 为这个职业筛选技能卡
           const professionSkillCards = allSkillCards.filter((card: ICard) => 
             card.role === profession || card.role === role.name
           );
-          
+        
           // 根据技能卡的 count 字段展开成多张
-          const expandedSkillCards: ICard[] = [];
+        const expandedSkillCards: ICard[] = [];
           professionSkillCards.forEach((card: ICard) => {
-            const count = (card as any).count || 1;
-            for (let i = 0; i < count; i++) {
-              expandedSkillCards.push({ ...card });
-            }
-          });
-          
-          return {
-            id: role._id,
-            roleCard: role,
+          const count = (card as any).count || 1;
+          for (let i = 0; i < count; i++) {
+            expandedSkillCards.push({ ...card });
+          }
+        });
+        
+        return {
+          id: role._id,
+          roleCard: role,
             profession: profession,
             availableRoles: professionRoles.length > 0 ? professionRoles : [role],
-            name: role.name,
-            imgUrl: role.imgUrl,
-            color: PLAYER_COLORS[index % PLAYER_COLORS.length],
-            hp: role.hp || 10,
-            maxHp: role.hp || 10,
-            stealth: role.stealth || 0,
-            hunger: 0,
-            gold: 0,
-            tags: [],
-            handResource: [],
-            handSkill: [],
+          name: role.name,
+          imgUrl: role.imgUrl,
+          color: PLAYER_COLORS[index % PLAYER_COLORS.length],
+          hp: role.hp || 10,
+          maxHp: role.hp || 10,
+          stealth: role.stealth || 0,
+          hunger: 0,
+          gold: 0,
+          tags: [],
+          handResource: [],
+          handSkill: [],
             skillDeck: shuffle(expandedSkillCards),
-            skillDiscard: [],
-            discard: [],
-            equipment: [],
-            x: 50 + (index - roleIdList.length / 2) * 5,
-            y: 50,
+          skillDiscard: [],
+          discard: [],
+          equipment: [],
+          x: 50 + (index - roleIdList.length / 2) * 5,
+          y: 50,
             _version: 0,
-          };
-        });
+        };
+      });
       }
       
       setPlayers(newPlayers);
@@ -529,7 +529,8 @@ function GamePlayPageContent() {
       name: `${gameState.campaignName} - ${players.map(p => p.name).join(', ')} - ${new Date().toLocaleString('zh-CN')}`,
       campaignId,
       campaignName: gameState.campaignName,
-      roleId: players[0]?.id,
+      // roleId 应该是角色卡的 ObjectId，而不是玩家 ID
+      roleId: players[0]?.roleCard?._id || undefined,
       roleName: players[0]?.name,
       roleImgUrl: players[0]?.imgUrl,
       players,
