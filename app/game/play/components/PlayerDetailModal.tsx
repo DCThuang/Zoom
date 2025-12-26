@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Heart, Shield, Utensils, Coins, Plus, Trash2, Backpack, Package, RotateCcw, ExternalLink, Play, Gift, RefreshCw } from 'lucide-react';
+import { X, Heart, Shield, Utensils, Coins, Plus, Trash2, Backpack, Package, RotateCcw, ExternalLink, Play, Gift, RefreshCw, ZoomIn } from 'lucide-react';
 import { Player, Equipment, ICard } from '../types';
 
 interface PlayerDetailModalProps {
@@ -10,6 +10,7 @@ interface PlayerDetailModalProps {
   onClose: () => void;
   onUpdatePlayer: (updates: Partial<Player>) => void;
   onSwitchRole: (newRoleCard: ICard) => void;  // 切换角色
+  onViewCard: (card: ICard) => void;  // 放大查看卡牌
   onAddTag: () => void;
   onRemoveTag: (idx: number) => void;
   onDiscardCard: (idx: number, isSkill: boolean) => void;
@@ -44,6 +45,7 @@ export default function PlayerDetailModal({
   onClose, 
   onUpdatePlayer, 
   onSwitchRole,
+  onViewCard,
   onAddTag, 
   onRemoveTag, 
   onDiscardCard,
@@ -204,15 +206,25 @@ export default function PlayerDetailModal({
             <div className="space-y-4">
               {/* Hand - Resources */}
               <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-bold text-amber-500/70 mb-3 uppercase tracking-wider">资源手牌 ({player.handResource.length})</h4>
+                <h4 className="text-sm font-bold text-amber-500/70 mb-3 uppercase tracking-wider flex items-center justify-between">
+                  <span>资源手牌 ({player.handResource.length})</span>
+                  <span className="text-xs text-slate-600 font-normal">点击图片放大</span>
+                </h4>
                 {player.handResource.length === 0 ? (
                   <div className="text-xs text-slate-600 py-4 text-center">空手牌</div>
                 ) : (
                   <div className="grid grid-cols-3 gap-3">
                     {player.handResource.map((card: ICard, i: number) => (
                       <div key={i} className="relative">
-                        <div className="aspect-[2/3] rounded border border-slate-700 overflow-hidden bg-black">
+                        <div 
+                          className="aspect-[2/3] rounded border border-slate-700 overflow-hidden bg-black cursor-pointer hover:border-amber-500 transition-colors group relative"
+                          onClick={() => onViewCard(card)}
+                          title="点击放大查看"
+                        >
                           <img src={card.imgUrl || `https://placehold.co/100x150/222/999?text=${card.name?.charAt(0) || '?'}`} className="w-full h-full object-cover"/>
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ZoomIn size={20} className="text-white" />
+                          </div>
                         </div>
                         <div className="text-[10px] text-center truncate mt-1 mb-1">{card.name}</div>
                         {/* Action buttons */}
@@ -250,7 +262,10 @@ export default function PlayerDetailModal({
 
               {/* Hand - Skills */}
               <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-bold text-purple-500/70 mb-3 uppercase tracking-wider">技能手牌 ({player.handSkill.length})</h4>
+                <h4 className="text-sm font-bold text-purple-500/70 mb-3 uppercase tracking-wider flex items-center justify-between">
+                  <span>技能手牌 ({player.handSkill.length})</span>
+                  <span className="text-xs text-slate-600 font-normal">点击图片放大</span>
+                </h4>
                 {player.handSkill.length === 0 ? (
                   <div className="text-xs text-slate-600 py-4 text-center">空手牌</div>
                 ) : (
@@ -262,11 +277,18 @@ export default function PlayerDetailModal({
                       
                       return (
                       <div key={i} className="relative">
-                        <div className="aspect-[2/3] rounded border border-purple-700 overflow-hidden bg-black relative">
+                        <div 
+                          className="aspect-[2/3] rounded border border-purple-700 overflow-hidden bg-black relative cursor-pointer hover:border-purple-400 transition-colors group"
+                          onClick={() => onViewCard(card)}
+                          title="点击放大查看"
+                        >
                           <img src={card.imgUrl || `https://placehold.co/100x150/222/999?text=${card.name?.charAt(0) || '?'}`} className="w-full h-full object-cover"/>
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ZoomIn size={20} className="text-white" />
+                          </div>
                           {isFromOther && originalOwner && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 bg-black/80 text-[8px] text-center py-0.5 font-bold"
+                              className="absolute bottom-0 left-0 right-0 bg-black/80 text-[8px] text-center py-0.5 font-bold z-10"
                               style={{ color: originalOwner.color }}
                             >
                               来自 {originalOwner.name}

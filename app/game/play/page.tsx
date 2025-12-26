@@ -1983,6 +1983,7 @@ function GamePlayPageContent() {
           onClose={() => setSelectedPlayer(null)}
           onUpdatePlayer={(updates: Partial<Player>) => { updatePlayer(selectedPlayer.id, updates); setSelectedPlayer({ ...selectedPlayer, ...updates }); }}
           onSwitchRole={(newRoleCard: ICard) => switchPlayerRole(selectedPlayer.id, newRoleCard)}
+          onViewCard={(card: ICard) => { setSelectedPlayer(null); setViewingCard(card); }}
           onAddTag={() => addTagToPlayer(selectedPlayer.id)}
           onRemoveTag={(idx: number) => removeTagFromPlayer(selectedPlayer.id, idx)}
           onDiscardCard={(idx: number, isSkill: boolean) => discardCardFromPlayer(selectedPlayer.id, idx, isSkill)}
