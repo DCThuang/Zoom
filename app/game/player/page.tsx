@@ -5,13 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Heart, Shield, Utensils, Coins, RefreshCw, 
   Trash2, Gift, X, ChevronDown, ChevronUp,
-  Package, Plus, Wifi, WifiOff, Zap, RotateCcw, Layers
+  Package, Plus, Wifi, WifiOff, Zap, RotateCcw, Layers, ZoomIn
 } from 'lucide-react';
 import { processCardDiscard } from '../play/utils/cardUtils';
 import { ICard, Player, GameState, Equipment, PlayedCard } from '../play/types';
 import { useGameSync } from '../play/hooks/useGameSync';
 import { getCardDisplayUrl } from '../play/utils/imageUtils';
 import CardCarousel from './components/CardCarousel';
+import ImageViewerModal from '../play/components/ImageViewerModal';
 
 // 移动端玩家页面内容
 function PlayerMobilePageContent() {
@@ -31,6 +32,7 @@ function PlayerMobilePageContent() {
   const [giftModal, setGiftModal] = useState<{ cardIndex: number; isSkill: boolean } | null>(null);
   const [showPersonalDiscardModal, setShowPersonalDiscardModal] = useState(false);
   const [showPublicDiscardModal, setShowPublicDiscardModal] = useState(false);
+  const [viewingCard, setViewingCard] = useState<ICard | null>(null);
   
   // 防止循环同步
   const isRemoteUpdateRef = useRef(false);
@@ -511,10 +513,19 @@ function PlayerMobilePageContent() {
                 style={{ borderColor: player.color }}
               >
                 <div 
-                  className="w-16 h-16 rounded-full border-3 overflow-hidden bg-black shrink-0"
+                  className="w-16 h-16 rounded-full border-3 overflow-hidden bg-black shrink-0 relative group"
                   style={{ borderColor: player.color }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (player.roleCard) setViewingCard(player.roleCard);
+                  }}
                 >
                   {player.imgUrl && <img src={player.imgUrl} className="w-full h-full object-cover" />}
+                  {player.roleCard && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn size={16} className="text-white"/>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 text-left">
                   <div className="text-lg font-bold" style={{ color: player.color }}>{player.name}</div>
@@ -578,10 +589,16 @@ function PlayerMobilePageContent() {
         {/* 头像和名称 */}
         <div className="flex items-center gap-4 mb-4">
           <div 
-            className="w-20 h-20 rounded-full border-4 overflow-hidden bg-black shrink-0"
+            className="w-20 h-20 rounded-full border-4 overflow-hidden bg-black shrink-0 relative group cursor-pointer"
             style={{ borderColor: currentPlayer.color }}
+            onClick={() => currentPlayer.roleCard && setViewingCard(currentPlayer.roleCard)}
           >
             {currentPlayer.imgUrl && <img src={currentPlayer.imgUrl} className="w-full h-full object-cover" />}
+            {currentPlayer.roleCard && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ZoomIn size={20} className="text-white"/>
+              </div>
+            )}
           </div>
           <div className="flex-1">
             <div className="text-2xl font-bold" style={{ color: currentPlayer.color }}>{currentPlayer.name}</div>
@@ -735,7 +752,10 @@ function PlayerMobilePageContent() {
             <div className="space-y-2">
               {currentPlayer.equipment.map((eq, i) => (
                 <div key={i} className="flex items-center gap-3 bg-slate-900 rounded-lg p-3">
-                  <div className="w-14 h-20 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0">
+                  <div 
+                    className="w-14 h-20 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 relative group cursor-pointer"
+                    onClick={() => setViewingCard(eq.card)}
+                  >
                     <img 
                       src={getCardDisplayUrl(eq.card)} 
                       alt={eq.card.name}
@@ -745,6 +765,9 @@ function PlayerMobilePageContent() {
                         target.src = `https://placehold.co/56x80/1e293b/64748b?text=${eq.card.name?.charAt(0) || '?'}`;
                       }}
                     />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn size={14} className="text-white"/>
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate">{eq.card.name}</div>
@@ -793,7 +816,11 @@ function PlayerMobilePageContent() {
             <div className="flex items-center gap-3">
               <div className="flex gap-2 overflow-x-auto pb-2 flex-1">
                 {currentPlayer.discard.slice(0, 4).map((card, i) => (
-                  <div key={i} className="w-10 h-14 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 opacity-70">
+                  <div 
+                    key={i} 
+                    className="w-10 h-14 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 opacity-70 relative group cursor-pointer"
+                    onClick={() => setViewingCard(card)}
+                  >
                     <img 
                       src={getCardDisplayUrl(card)} 
                       alt={card.name}
@@ -803,6 +830,9 @@ function PlayerMobilePageContent() {
                         target.src = `https://placehold.co/40x56/1e293b/64748b?text=?`;
                       }}
                     />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn size={10} className="text-white"/>
+                    </div>
                   </div>
                 ))}
                 {currentPlayer.discard.length > 4 && (
@@ -891,7 +921,10 @@ function PlayerMobilePageContent() {
               <div className="overflow-y-auto flex-1 grid grid-cols-3 gap-3">
                 {currentPlayer.discard.map((card, i) => (
                   <div key={i} className="relative group">
-                    <div className="aspect-[2/3] rounded-lg border border-slate-700 overflow-hidden bg-slate-900">
+                    <div 
+                      className="aspect-[2/3] rounded-lg border border-slate-700 overflow-hidden bg-slate-900 cursor-pointer"
+                      onClick={() => { setShowPersonalDiscardModal(false); setViewingCard(card); }}
+                    >
                       <img 
                         src={getCardDisplayUrl(card)} 
                         alt={card.name}
@@ -901,16 +934,17 @@ function PlayerMobilePageContent() {
                           target.src = `https://placehold.co/80x120/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <ZoomIn size={16} className="text-white"/>
+                      </div>
                     </div>
                     <div className="text-[10px] text-center truncate mt-1 text-slate-400">{card.name}</div>
                     <div className="text-[8px] text-center text-slate-600">{card.type === 'SKILL' ? '技能' : '资源'}</div>
                     <button
-                      onClick={() => recoverFromDiscard(i)}
-                      className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                      onClick={(e) => { e.stopPropagation(); recoverFromDiscard(i); }}
+                      className="absolute bottom-8 left-0 right-0 mx-auto w-fit px-2 py-1 bg-emerald-600 rounded text-white text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <span className="px-2 py-1 bg-emerald-600 rounded text-white text-xs font-bold flex items-center gap-1">
-                        <RotateCcw size={10} /> 取回
-                      </span>
+                      <RotateCcw size={10} /> 取回
                     </button>
                   </div>
                 ))}
@@ -944,7 +978,10 @@ function PlayerMobilePageContent() {
               <div className="overflow-y-auto flex-1 grid grid-cols-3 gap-3">
                 {gameState.publicDiscard.map((card, i) => (
                   <div key={i} className="relative group">
-                    <div className="aspect-[2/3] rounded-lg border border-slate-700 overflow-hidden bg-slate-900">
+                    <div 
+                      className="aspect-[2/3] rounded-lg border border-slate-700 overflow-hidden bg-slate-900 cursor-pointer"
+                      onClick={() => { setShowPublicDiscardModal(false); setViewingCard(card); }}
+                    >
                       <img 
                         src={getCardDisplayUrl(card)} 
                         alt={card.name}
@@ -954,15 +991,16 @@ function PlayerMobilePageContent() {
                           target.src = `https://placehold.co/80x120/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <ZoomIn size={16} className="text-white"/>
+                      </div>
                     </div>
                     <div className="text-[10px] text-center truncate mt-1 text-slate-400">{card.name}</div>
                     <button
-                      onClick={() => recoverFromPublicDiscard(i)}
-                      className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                      onClick={(e) => { e.stopPropagation(); recoverFromPublicDiscard(i); }}
+                      className="absolute bottom-6 left-0 right-0 mx-auto w-fit px-2 py-1 bg-amber-600 rounded text-white text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <span className="px-2 py-1 bg-amber-600 rounded text-white text-xs font-bold flex items-center gap-1">
-                        <Plus size={10} /> 拿回
-                      </span>
+                      <Plus size={10} /> 拿回
                     </button>
                   </div>
                 ))}
@@ -977,6 +1015,14 @@ function PlayerMobilePageContent() {
         <div className="fixed bottom-4 left-4 text-xs text-slate-600">
           上次同步: {lastSync.toLocaleTimeString()}
         </div>
+      )}
+
+      {/* 卡牌放大查看模态框 */}
+      {viewingCard && (
+        <ImageViewerModal
+          card={viewingCard}
+          onClose={() => setViewingCard(null)}
+        />
       )}
     </div>
   );

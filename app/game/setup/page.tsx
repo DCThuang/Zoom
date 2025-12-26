@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, User, Map, Swords, Check, X, Users } from 'lucide-react';
+import { ChevronRight, User, Map, Swords, Check, X, Users, ZoomIn } from 'lucide-react';
+import ImageViewerModal from '../play/components/ImageViewerModal';
 
 export default function GameSetupPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function GameSetupPage() {
   const [selectedCampaign, setSelectedCampaign] = useState('');
   const [selectedProfessions, setSelectedProfessions] = useState<string[]>([]); // 选择职业
   const [loading, setLoading] = useState(true);
+  const [viewingCard, setViewingCard] = useState<any>(null);
 
   useEffect(() => {
     Promise.all([
@@ -165,18 +167,27 @@ export default function GameSetupPage() {
                       <div className="flex gap-3 overflow-x-auto pb-2">
                         {professionRoles.map(role => (
                           <div key={role._id} className="shrink-0 w-20">
-                            <div className="aspect-[3/4] bg-black rounded-lg overflow-hidden mb-1">
-                      <img 
-                        src={role.imgUrl || `https://placehold.co/300x400/222/999?text=${role.name}`} 
-                        alt={role.name} 
+                            <div 
+                              className="aspect-[3/4] bg-black rounded-lg overflow-hidden mb-1 relative group cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewingCard(role);
+                              }}
+                            >
+                              <img 
+                                src={role.imgUrl || `https://placehold.co/300x400/222/999?text=${role.name}`} 
+                                alt={role.name} 
                                 className="w-full h-full object-cover"
                               />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ZoomIn size={18} className="text-white"/>
+                              </div>
                             </div>
                             <div className="text-xs text-center text-slate-300 truncate">{role.name}</div>
                             <div className="flex justify-center gap-1 mt-1">
                               <span className="text-[10px] bg-green-900/80 px-1 py-0.5 rounded text-green-300">HP:{role.hp}</span>
                             </div>
-                        </div>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -205,6 +216,14 @@ export default function GameSetupPage() {
           </button>
         </div>
       </div>
+
+      {/* 卡牌放大查看模态框 */}
+      {viewingCard && (
+        <ImageViewerModal
+          card={viewingCard}
+          onClose={() => setViewingCard(null)}
+        />
+      )}
     </div>
   );
 }

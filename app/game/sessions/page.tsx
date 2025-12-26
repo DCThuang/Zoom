@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Play, Trash2, Clock, User, Map } from 'lucide-react';
+import { ChevronLeft, Play, Trash2, Clock, User, Map, ZoomIn } from 'lucide-react';
+import ImageViewerModal from '../play/components/ImageViewerModal';
 
 interface GameSession {
   _id: string;
@@ -13,12 +14,14 @@ interface GameSession {
   gameStarted: boolean;
   createdAt: string;
   updatedAt: string;
+  players?: any[];
 }
 
 export default function GameSessionsPage() {
   const router = useRouter();
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingImage, setViewingImage] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     fetchSessions();
@@ -100,9 +103,22 @@ export default function GameSessionsPage() {
               >
                 <div className="flex items-center gap-4">
                   {/* Role Avatar */}
-                  <div className="w-16 h-16 rounded-full border-2 border-amber-500/50 overflow-hidden bg-black shrink-0">
+                  <div 
+                    className="w-16 h-16 rounded-full border-2 border-amber-500/50 overflow-hidden bg-black shrink-0 relative group cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (session.roleImgUrl) {
+                        setViewingImage({ url: session.roleImgUrl, title: session.roleName });
+                      }
+                    }}
+                  >
                     {session.roleImgUrl ? (
-                      <img src={session.roleImgUrl} className="w-full h-full object-cover" />
+                      <>
+                        <img src={session.roleImgUrl} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ZoomIn size={20} className="text-white"/>
+                        </div>
+                      </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-600">
                         <User size={24} />
@@ -159,6 +175,15 @@ export default function GameSessionsPage() {
           </div>
         )}
       </div>
+
+      {/* 图片放大查看模态框 */}
+      {viewingImage && (
+        <ImageViewerModal
+          imageUrl={viewingImage.url}
+          title={viewingImage.title}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
     </div>
   );
 }
