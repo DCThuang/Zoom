@@ -51,6 +51,10 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
   // 搜索状态
   const [searchQuery, setSearchQuery] = useState('');
   
+  // 已选卡牌区域展开状态
+  const [resourceConfigExpanded, setResourceConfigExpanded] = useState(false);
+  const [enemyConfigExpanded, setEnemyConfigExpanded] = useState(false);
+  
   // 版本展开状态
   const [expandedEditions, setExpandedEditions] = useState<Record<string, boolean>>({});
   
@@ -638,96 +642,144 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
           </div>
           
           {/* 已选资源卡配置 */}
-          {getResourceConfigs().length > 0 && (
-             <div className="mt-4 pt-4 border-t border-slate-700">
-                <div className="text-sm font-bold text-slate-400 mb-2">已选资源卡配置:</div>
-                <div className="flex flex-wrap gap-2">
-                    {getResourceConfigs().map(config => {
-                        const card = cards.find(c => c._id === config.cardId);
-                        if (!card) return null;
-                        const colorInfo = colorLabels[config.color || 'RED'];
-                        return (
-                            <div key={config.configId} className={`flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border ${colorInfo.border} text-xs`}>
-                                <span className={`w-2 h-2 rounded-full ${colorInfo.class}`}></span>
-                                <span className="font-medium">{card.name}</span>
-                                <div className="flex items-center gap-1 bg-slate-900 rounded px-1.5 py-0.5">
-                                    <button 
-                                        onClick={() => updateConfigCount(config.configId, config.count - 1)}
-                                        className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
-                                    >−</button>
-                                    <span className="w-6 text-center font-bold text-amber-400">{config.count}</span>
-                                    <button 
-                                        onClick={() => updateConfigCount(config.configId, config.count + 1)}
-                                        className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
-                                    >+</button>
-                                </div>
-                                <select 
-                                    value={config.color} 
-                                    onChange={(e) => updateConfigColor(config.configId, e.target.value as any)}
-                                    className={`bg-slate-900 rounded px-1 py-0.5 border-none outline-none font-bold ${
-                                        config.color === 'RED' ? 'text-red-500' : 
-                                        config.color === 'BLUE' ? 'text-blue-500' : 
-                                        config.color === 'SHOP' ? 'text-yellow-500' : 'text-green-500'
-                                    }`}
-                                >
-                                    <option value="RED">红</option>
-                                    <option value="BLUE">蓝</option>
-                                    <option value="GREEN">绿</option>
-                                    <option value="SHOP">商店</option>
-                                </select>
-                                <X 
-                                    size={14} 
-                                    className="cursor-pointer hover:text-red-500" 
-                                    onClick={() => removeCardConfig(config.configId)}
-                                />
-                            </div>
-                        )
-                    })}
-                </div>
-             </div>
-          )}
+          {getResourceConfigs().length > 0 && (() => {
+             const configs = getResourceConfigs();
+             const ITEMS_PER_ROW = 3;
+             const lastRowStart = Math.floor((configs.length - 1) / ITEMS_PER_ROW) * ITEMS_PER_ROW;
+             const displayConfigs = resourceConfigExpanded ? configs : configs.slice(lastRowStart);
+             const hasMore = configs.length > ITEMS_PER_ROW;
+             
+             return (
+               <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-bold text-slate-400">
+                      已选资源卡配置: <span className="text-amber-400">({configs.length})</span>
+                    </div>
+                    {hasMore && (
+                      <button 
+                        onClick={() => setResourceConfigExpanded(!resourceConfigExpanded)}
+                        className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1"
+                      >
+                        {resourceConfigExpanded ? (
+                          <><ChevronDown size={14} /> 收起</>
+                        ) : (
+                          <><ChevronRight size={14} /> 展开全部 ({configs.length - displayConfigs.length} 隐藏)</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                      {displayConfigs.map(config => {
+                          const card = cards.find(c => c._id === config.cardId);
+                          if (!card) return null;
+                          const colorInfo = colorLabels[config.color || 'RED'];
+                          return (
+                              <div key={config.configId} className={`flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border ${colorInfo.border} text-xs`}>
+                                  <span className={`w-2 h-2 rounded-full ${colorInfo.class}`}></span>
+                                  <span className="font-medium">{card.name}</span>
+                                  <div className="flex items-center gap-1 bg-slate-900 rounded px-1.5 py-0.5">
+                                      <button 
+                                          onClick={() => updateConfigCount(config.configId, config.count - 1)}
+                                          className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
+                                      >−</button>
+                                      <span className="w-6 text-center font-bold text-amber-400">{config.count}</span>
+                                      <button 
+                                          onClick={() => updateConfigCount(config.configId, config.count + 1)}
+                                          className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
+                                      >+</button>
+                                  </div>
+                                  <select 
+                                      value={config.color} 
+                                      onChange={(e) => updateConfigColor(config.configId, e.target.value as any)}
+                                      className={`bg-slate-900 rounded px-1 py-0.5 border-none outline-none font-bold ${
+                                          config.color === 'RED' ? 'text-red-500' : 
+                                          config.color === 'BLUE' ? 'text-blue-500' : 
+                                          config.color === 'SHOP' ? 'text-yellow-500' : 'text-green-500'
+                                      }`}
+                                  >
+                                      <option value="RED">红</option>
+                                      <option value="BLUE">蓝</option>
+                                      <option value="GREEN">绿</option>
+                                      <option value="SHOP">商店</option>
+                                  </select>
+                                  <X 
+                                      size={14} 
+                                      className="cursor-pointer hover:text-red-500" 
+                                      onClick={() => removeCardConfig(config.configId)}
+                                  />
+                              </div>
+                          )
+                      })}
+                  </div>
+               </div>
+             );
+          })()}
           
           {/* 已选敌人卡配置 */}
-          {getEnemyConfigs().length > 0 && (
-             <div className="mt-4 pt-4 border-t border-slate-700">
-                <div className="text-sm font-bold text-slate-400 mb-2">已选敌人卡配置:</div>
-                <div className="flex flex-wrap gap-2">
-                    {getEnemyConfigs().map(config => {
-                        const card = cards.find(c => c._id === config.cardId);
-                        if (!card) return null;
-                        return (
-                            <div key={config.configId} className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-red-700 text-xs">
-                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                                <span className="font-medium">{card.name}</span>
-                                {card.edition && <span className="text-slate-500">({card.edition})</span>}
-                                <div className="flex items-center gap-1 bg-slate-900 rounded px-1.5 py-0.5">
-                                    <button 
-                                        onClick={() => {
-                                          if (config.count <= 1) {
-                                            removeCardConfig(config.configId);
-                                          } else {
-                                            updateConfigCount(config.configId, config.count - 1);
-                                          }
-                                        }}
-                                        className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
-                                    >−</button>
-                                    <span className="w-6 text-center font-bold text-red-400">{config.count}</span>
-                                    <button 
-                                        onClick={() => updateConfigCount(config.configId, config.count + 1)}
-                                        className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
-                                    >+</button>
-                                </div>
-                                <X 
-                                    size={14} 
-                                    className="cursor-pointer hover:text-red-500" 
-                                    onClick={() => removeCardConfig(config.configId)}
-                                />
-                            </div>
-                        )
-                    })}
-                </div>
-             </div>
-          )}
+          {getEnemyConfigs().length > 0 && (() => {
+             const configs = getEnemyConfigs();
+             const ITEMS_PER_ROW = 3;
+             const lastRowStart = Math.floor((configs.length - 1) / ITEMS_PER_ROW) * ITEMS_PER_ROW;
+             const displayConfigs = enemyConfigExpanded ? configs : configs.slice(lastRowStart);
+             const hasMore = configs.length > ITEMS_PER_ROW;
+             
+             return (
+               <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-bold text-slate-400">
+                      已选敌人卡配置: <span className="text-red-400">({configs.length})</span>
+                    </div>
+                    {hasMore && (
+                      <button 
+                        onClick={() => setEnemyConfigExpanded(!enemyConfigExpanded)}
+                        className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1"
+                      >
+                        {enemyConfigExpanded ? (
+                          <><ChevronDown size={14} /> 收起</>
+                        ) : (
+                          <><ChevronRight size={14} /> 展开全部 ({configs.length - displayConfigs.length} 隐藏)</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                      {displayConfigs.map(config => {
+                          const card = cards.find(c => c._id === config.cardId);
+                          if (!card) return null;
+                          return (
+                              <div key={config.configId} className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-red-700 text-xs">
+                                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                  <span className="font-medium">{card.name}</span>
+                                  {card.edition && <span className="text-slate-500">({card.edition})</span>}
+                                  <div className="flex items-center gap-1 bg-slate-900 rounded px-1.5 py-0.5">
+                                      <button 
+                                          onClick={() => {
+                                            if (config.count <= 1) {
+                                              removeCardConfig(config.configId);
+                                            } else {
+                                              updateConfigCount(config.configId, config.count - 1);
+                                            }
+                                          }}
+                                          className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
+                                      >−</button>
+                                      <span className="w-6 text-center font-bold text-red-400">{config.count}</span>
+                                      <button 
+                                          onClick={() => updateConfigCount(config.configId, config.count + 1)}
+                                          className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold"
+                                      >+</button>
+                                  </div>
+                                  <X 
+                                      size={14} 
+                                      className="cursor-pointer hover:text-red-500" 
+                                      onClick={() => removeCardConfig(config.configId)}
+                                  />
+                              </div>
+                          )
+                      })}
+                  </div>
+               </div>
+             );
+          })()}
           
           {cardConfigs.length > 0 && (
             <div className="mt-2 text-xs text-slate-500">
