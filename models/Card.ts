@@ -19,6 +19,7 @@ export interface ICard extends Document {
   // Player Card specific
   hp?: number; 
   stealth?: number;
+  profession?: string;  // 职业（如"枪手"、"法师"等，同职业角色共享技能卡）
 
   // Enemy Card specific
   attack?: number;
@@ -53,6 +54,7 @@ const CardSchema: Schema = new Schema({
   // Player/Enemy specific fields
   hp: { type: Number },
   stealth: { type: Number },
+  profession: { type: String },  // 职业（玩家卡使用，同职业共享技能卡）
   attack: { type: Number },
   edition: { type: String },  // 版本（敌人卡、地图卡使用）
 

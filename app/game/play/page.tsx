@@ -34,7 +34,8 @@ function GamePlayPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlCampaignId = searchParams.get('campaignId');
-  const roleIds = searchParams.get('roleIds'); // Comma-separated role IDs
+  const roleIds = searchParams.get('roleIds'); // Comma-separated role IDs (legacy)
+  const professions = searchParams.get('professions'); // Comma-separated profession names
   const sessionId = searchParams.get('sessionId');
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
@@ -196,10 +197,12 @@ function GamePlayPageContent() {
       loadSession(sessionId);
       return;
     }
-    if (!urlCampaignId || !roleIds) return;
+    if (!urlCampaignId) return;
+    // 支持新的职业参数或旧的角色ID参数
+    if (!professions && !roleIds) return;
     setCampaignId(urlCampaignId);
     initNewGame();
-  }, [urlCampaignId, roleIds, sessionId]);
+  }, [urlCampaignId, roleIds, professions, sessionId]);
 
   const loadSession = async (sid: string) => {
     try {
@@ -312,58 +315,132 @@ function GamePlayPageContent() {
 
   const initNewGame = async () => {
     try {
-      // Fetch all selected roles
-      const roleIdList = roleIds!.split(',');
-      const rolePromises = roleIdList.map(id => 
-        fetch(`/api/cards/${id}`).then(res => res.json())
-      );
-      const roleResults = await Promise.all(rolePromises);
+      // Fetch all player cards
+      const allPlayersRes = await fetch('/api/cards?type=PLAYER');
+      const allPlayersData = await allPlayersRes.json();
+      const allPlayerCards: ICard[] = allPlayersData.success ? allPlayersData.data : [];
       
       // Fetch all skill cards from the database
       const skillCardsRes = await fetch('/api/cards?type=SKILL');
       const skillCardsData = await skillCardsRes.json();
       const allSkillCards: ICard[] = skillCardsData.success ? skillCardsData.data : [];
       
-      // Create players with their skill decks
-      const newPlayers: Player[] = roleResults.map((data, index) => {
-        if (!data.success) throw new Error('角色加载失败');
-        const role = data.data;
+      let newPlayers: Player[] = [];
+      
+      // 新的职业模式
+      if (professions) {
+        const professionList = decodeURIComponent(professions).split(',');
         
-        // 为这个角色筛选技能卡（根据 role 字段匹配角色名）
-        const roleSkillCards = allSkillCards.filter((card: ICard) => card.role === role.name);
-        
-        // 根据技能卡的 count 字段展开成多张（如果有的话）
-        const expandedSkillCards: ICard[] = [];
-        roleSkillCards.forEach((card: ICard) => {
-          const count = (card as any).count || 1;
-          for (let i = 0; i < count; i++) {
-            expandedSkillCards.push({ ...card });
+        newPlayers = professionList.map((profession, index) => {
+          // 获取该职业的所有角色卡
+          const professionRoles = allPlayerCards.filter((card: ICard) => 
+            (card as any).profession === profession
+          );
+          
+          if (professionRoles.length === 0) {
+            throw new Error(`职业 "${profession}" 没有对应的角色卡`);
           }
+          
+          // 使用第一个角色作为默认角色
+          const defaultRole = professionRoles[0];
+          
+          // 为这个职业筛选技能卡（根据 role 字段匹配职业名）
+          const professionSkillCards = allSkillCards.filter((card: ICard) => card.role === profession);
+          
+          // 根据技能卡的 count 字段展开成多张
+          const expandedSkillCards: ICard[] = [];
+          professionSkillCards.forEach((card: ICard) => {
+            const count = (card as any).count || 1;
+            for (let i = 0; i < count; i++) {
+              expandedSkillCards.push({ ...card });
+            }
+          });
+          
+          return {
+            id: `${profession}-${Date.now()}-${index}`,  // 使用职业+时间戳作为唯一ID
+            roleCard: defaultRole,
+            profession: profession,
+            availableRoles: professionRoles,  // 存储同职业的所有角色卡
+            name: defaultRole.name,
+            imgUrl: defaultRole.imgUrl,
+            color: PLAYER_COLORS[index % PLAYER_COLORS.length],
+            hp: defaultRole.hp || 10,
+            maxHp: defaultRole.hp || 10,
+            stealth: defaultRole.stealth || 0,
+            hunger: 0,
+            gold: 0,
+            tags: [],
+            handResource: [],
+            handSkill: [],
+            skillDeck: shuffle(expandedSkillCards),  // 洗牌后放入技能牌堆
+            skillDiscard: [],
+            discard: [],
+            equipment: [],
+            x: 50 + (index - professionList.length / 2) * 5,
+            y: 50,
+            _version: 0,
+          };
         });
+      } 
+      // 兼容旧的角色ID模式
+      else if (roleIds) {
+        const roleIdList = roleIds.split(',');
+        const rolePromises = roleIdList.map(id => 
+          fetch(`/api/cards/${id}`).then(res => res.json())
+        );
+        const roleResults = await Promise.all(rolePromises);
         
-        return {
-          id: role._id,
-          roleCard: role,
-          name: role.name,
-          imgUrl: role.imgUrl,
-          color: PLAYER_COLORS[index % PLAYER_COLORS.length],
-          hp: role.hp || 10,
-          maxHp: role.hp || 10,
-          stealth: role.stealth || 0,
-          hunger: 0,
-          gold: 0,
-          tags: [],
-          handResource: [],
-          handSkill: [],
-          skillDeck: shuffle(expandedSkillCards),  // 洗牌后放入技能牌堆
-          skillDiscard: [],
-          discard: [],
-          equipment: [],
-          x: 50 + (index - roleIdList.length / 2) * 5,
-          y: 50,
-          _version: 0,  // 初始化版本号，用于同步时防止旧数据覆盖
-        };
-      });
+        newPlayers = roleResults.map((data, index) => {
+          if (!data.success) throw new Error('角色加载失败');
+          const role = data.data;
+          const profession = (role as any).profession || role.name;
+          
+          // 获取同职业的所有角色卡
+          const professionRoles = allPlayerCards.filter((card: ICard) => 
+            (card as any).profession === profession
+          );
+          
+          // 为这个职业筛选技能卡
+          const professionSkillCards = allSkillCards.filter((card: ICard) => 
+            card.role === profession || card.role === role.name
+          );
+          
+          // 根据技能卡的 count 字段展开成多张
+          const expandedSkillCards: ICard[] = [];
+          professionSkillCards.forEach((card: ICard) => {
+            const count = (card as any).count || 1;
+            for (let i = 0; i < count; i++) {
+              expandedSkillCards.push({ ...card });
+            }
+          });
+          
+          return {
+            id: role._id,
+            roleCard: role,
+            profession: profession,
+            availableRoles: professionRoles.length > 0 ? professionRoles : [role],
+            name: role.name,
+            imgUrl: role.imgUrl,
+            color: PLAYER_COLORS[index % PLAYER_COLORS.length],
+            hp: role.hp || 10,
+            maxHp: role.hp || 10,
+            stealth: role.stealth || 0,
+            hunger: 0,
+            gold: 0,
+            tags: [],
+            handResource: [],
+            handSkill: [],
+            skillDeck: shuffle(expandedSkillCards),
+            skillDiscard: [],
+            discard: [],
+            equipment: [],
+            x: 50 + (index - roleIdList.length / 2) * 5,
+            y: 50,
+            _version: 0,
+          };
+        });
+      }
+      
       setPlayers(newPlayers);
 
       // Fetch campaign
@@ -547,6 +624,34 @@ function GamePlayPageContent() {
       if (p.id !== playerId) return p;
       return { ...p, ...updates, _version: (p._version || 0) + 1 };
     }));
+  };
+
+  // 切换玩家角色（同职业）
+  const switchPlayerRole = (playerId: string, newRoleCard: ICard) => {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p;
+      return {
+        ...p,
+        roleCard: newRoleCard,
+        name: newRoleCard.name,
+        imgUrl: newRoleCard.imgUrl,
+        // 可以选择是否重置属性，这里保留当前属性
+        // hp: newRoleCard.hp || p.hp,
+        // maxHp: newRoleCard.hp || p.maxHp,
+        // stealth: newRoleCard.stealth || p.stealth,
+        _version: (p._version || 0) + 1
+      };
+    }));
+    // 同步更新 selectedPlayer
+    if (selectedPlayer && selectedPlayer.id === playerId) {
+      setSelectedPlayer(prev => prev ? {
+        ...prev,
+        roleCard: newRoleCard,
+        name: newRoleCard.name,
+        imgUrl: newRoleCard.imgUrl,
+        _version: (prev._version || 0) + 1
+      } : null);
+    }
   };
 
   const addTagToPlayer = (playerId: string) => {
@@ -1877,6 +1982,7 @@ function GamePlayPageContent() {
           allPlayers={players}
           onClose={() => setSelectedPlayer(null)}
           onUpdatePlayer={(updates: Partial<Player>) => { updatePlayer(selectedPlayer.id, updates); setSelectedPlayer({ ...selectedPlayer, ...updates }); }}
+          onSwitchRole={(newRoleCard: ICard) => switchPlayerRole(selectedPlayer.id, newRoleCard)}
           onAddTag={() => addTagToPlayer(selectedPlayer.id)}
           onRemoveTag={(idx: number) => removeTagFromPlayer(selectedPlayer.id, idx)}
           onDiscardCard={(idx: number, isSkill: boolean) => discardCardFromPlayer(selectedPlayer.id, idx, isSkill)}

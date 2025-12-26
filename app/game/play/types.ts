@@ -35,6 +35,8 @@ export interface Equipment {
 export interface Player {
   id: string;
   roleCard: ICard;
+  profession?: string;        // 职业（如"枪手"）
+  availableRoles?: ICard[];   // 同职业可切换的所有角色卡
   name: string;
   imgUrl: string;
   color: string;

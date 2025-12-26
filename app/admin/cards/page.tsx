@@ -48,8 +48,19 @@ export default function CardAdminPage() {
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
   
-  // 存储所有玩家角色卡（用于技能卡的角色选择）
+  // 存储所有玩家角色卡（用于技能卡的职业选择）
   const [playerRoles, setPlayerRoles] = useState<Card[]>([]);
+  
+  // 获取所有职业列表（从玩家卡的 profession 字段去重）
+  const professionList = useMemo(() => {
+    const professions = new Set<string>();
+    playerRoles.forEach(role => {
+      if (role.profession) {
+        professions.add(role.profession);
+      }
+    });
+    return Array.from(professions).sort();
+  }, [playerRoles]);
   
   // 版本管理
   const [editions, setEditions] = useState<Edition[]>([]);
@@ -711,7 +722,7 @@ export default function CardAdminPage() {
             {formData.type === 'SKILL' && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
                     <div>
-                        <label className="block text-xs text-slate-500 mb-1">所属角色 <span className="text-red-500">*</span></label>
+                        <label className="block text-xs text-slate-500 mb-1">所属职业 <span className="text-red-500">*</span></label>
                         <select 
                             name="role" 
                             value={formData.role||''} 
@@ -719,13 +730,13 @@ export default function CardAdminPage() {
                             className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
                             required
                         >
-                            <option value="">-- 请选择角色 --</option>
-                            {playerRoles.map(role => (
-                                <option key={role._id} value={role.name}>{role.name}</option>
+                            <option value="">-- 请选择职业 --</option>
+                            {professionList.map(profession => (
+                                <option key={profession} value={profession}>{profession}</option>
                             ))}
                         </select>
-                        {playerRoles.length === 0 && (
-                            <p className="text-xs text-amber-500 mt-1">请先创建玩家角色卡</p>
+                        {professionList.length === 0 && (
+                            <p className="text-xs text-amber-500 mt-1">请先创建玩家角色卡并设置职业</p>
                         )}
                     </div>
                     <div><label className="block text-xs text-slate-500 mb-1">技能类型</label><input name="skillType" value={formData.skillType||''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" /></div>
@@ -737,7 +748,11 @@ export default function CardAdminPage() {
 
             {formData.type === 'PLAYER' && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-                    <div><label className="block text-xs text-slate-500 mb-1">角色职业名</label><input name="role" value={formData.role||''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" /></div>
+                    <div>
+                        <label className="block text-xs text-slate-500 mb-1">职业 <span className="text-red-500">*</span></label>
+                        <input name="profession" value={formData.profession||''} onChange={handleChange} placeholder="如：枪手、法师" className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" required />
+                        <p className="text-xs text-slate-600 mt-1">同职业角色共享技能卡（如"枪手-男"和"枪手-女"职业都填"枪手"）</p>
+                    </div>
                     <div><label className="block text-xs text-slate-500 mb-1">初始HP</label><input type="number" name="hp" value={formData.hp||''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" /></div>
                     <div><label className="block text-xs text-slate-500 mb-1">初始潜行</label><input type="number" name="stealth" value={formData.stealth||''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" /></div>
                 </div>

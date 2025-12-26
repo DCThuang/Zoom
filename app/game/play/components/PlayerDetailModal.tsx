@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Heart, Shield, Utensils, Coins, Plus, Trash2, Backpack, Package, RotateCcw, ExternalLink, Play, Gift } from 'lucide-react';
+import { X, Heart, Shield, Utensils, Coins, Plus, Trash2, Backpack, Package, RotateCcw, ExternalLink, Play, Gift, RefreshCw } from 'lucide-react';
 import { Player, Equipment, ICard } from '../types';
 
 interface PlayerDetailModalProps {
@@ -9,6 +9,7 @@ interface PlayerDetailModalProps {
   allPlayers: Player[];  // 所有玩家列表，用于赠送
   onClose: () => void;
   onUpdatePlayer: (updates: Partial<Player>) => void;
+  onSwitchRole: (newRoleCard: ICard) => void;  // 切换角色
   onAddTag: () => void;
   onRemoveTag: (idx: number) => void;
   onDiscardCard: (idx: number, isSkill: boolean) => void;
@@ -42,6 +43,7 @@ export default function PlayerDetailModal({
   allPlayers,
   onClose, 
   onUpdatePlayer, 
+  onSwitchRole,
   onAddTag, 
   onRemoveTag, 
   onDiscardCard,
@@ -57,13 +59,17 @@ export default function PlayerDetailModal({
   const [giftModal, setGiftModal] = useState<{ cardIndex: number; isSkill: boolean } | null>(null);
   const otherPlayers = allPlayers.filter(p => p.id !== player.id);
 
-  // 根据技能牌的 role 字段找到原始拥有者
+  // 根据技能牌的 role 字段找到原始拥有者（根据职业查找）
   const getSkillCardOwner = (card: ICard) => {
     if (card.role) {
-      return allPlayers.find(p => p.name === card.role);
+      // 先按职业查找，再按名称查找（兼容旧数据）
+      return allPlayers.find(p => p.profession === card.role) || allPlayers.find(p => p.name === card.role);
     }
     return null;
   };
+
+  // 检查是否有多个可切换的角色
+  const hasMultipleRoles = player.availableRoles && player.availableRoles.length > 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
@@ -86,6 +92,46 @@ export default function PlayerDetailModal({
             
             {/* Left Column */}
             <div className="space-y-4">
+              {/* Role Switch - 只有有多个角色时才显示 */}
+              {hasMultipleRoles && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <RefreshCw size={14} />
+                    <span>切换角色</span>
+                    <span className="text-xs font-normal text-slate-600">({player.profession})</span>
+                  </h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {player.availableRoles!.map((role: ICard) => {
+                      const isCurrentRole = role._id === player.roleCard?._id;
+                      return (
+                        <div 
+                          key={role._id}
+                          onClick={() => !isCurrentRole && onSwitchRole(role)}
+                          className={`relative cursor-pointer transition-all ${
+                            isCurrentRole 
+                              ? 'ring-2 ring-amber-500 opacity-100' 
+                              : 'opacity-70 hover:opacity-100 hover:ring-2 hover:ring-slate-500'
+                          }`}
+                        >
+                          <div className="w-16 h-20 rounded border border-slate-600 overflow-hidden bg-black">
+                            <img 
+                              src={role.imgUrl || `https://placehold.co/100x150/222/999?text=${role.name?.charAt(0) || '?'}`} 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                          <div className="text-[10px] text-center truncate mt-1">{role.name}</div>
+                          {isCurrentRole && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+                              <span className="text-[8px] text-white font-bold">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Stats */}
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <h4 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider">属性</h4>

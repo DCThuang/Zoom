@@ -10,7 +10,9 @@ interface IEquipment {
 // Player data structure
 interface IPlayer {
   id: string;
-  roleCard: any;
+  roleCard: any;           // 当前使用的角色卡
+  profession: string;      // 职业（如"枪手"）
+  availableRoles: any[];   // 同职业可切换的所有角色卡
   name: string;
   imgUrl: string;
   color: string;
@@ -117,6 +119,8 @@ const EquipmentSchema = new Schema({
 const PlayerSchema = new Schema({
   id: String,
   roleCard: Schema.Types.Mixed,
+  profession: String,                    // 职业
+  availableRoles: [Schema.Types.Mixed],  // 同职业可切换的角色卡
   name: String,
   imgUrl: String,
   color: String,
