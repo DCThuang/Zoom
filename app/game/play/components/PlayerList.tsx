@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'lucide-react';
-import { Player } from '../types';
+import { Player, ICard } from '../types';
 import PlayerCard from './PlayerCard';
 
 interface PlayerListProps {
@@ -15,6 +15,7 @@ interface PlayerListProps {
   onEquipmentClick: (playerId: string, idx: number) => void;
   onUpdateEquipAmmo: (playerId: string, equipIdx: number, delta: number) => void;
   onViewSkillDeck: (playerId: string) => void;
+  onViewCard?: (card: ICard) => void;
 }
 
 export default function PlayerList({
@@ -28,6 +29,7 @@ export default function PlayerList({
   onEquipmentClick,
   onUpdateEquipAmmo,
   onViewSkillDeck,
+  onViewCard,
 }: PlayerListProps) {
   return (
     <div className="w-[420px] bg-[#0d0d10] border-r border-slate-800 overflow-y-auto p-4 space-y-4 shrink-0">
@@ -48,6 +50,7 @@ export default function PlayerList({
           onEquipmentClick={(idx: number) => onEquipmentClick(player.id, idx)}
           onUpdateEquipAmmo={(equipIdx: number, delta: number) => onUpdateEquipAmmo(player.id, equipIdx, delta)}
           onViewSkillDeck={() => onViewSkillDeck(player.id)}
+          onViewCard={onViewCard}
         />
       ))}
     </div>

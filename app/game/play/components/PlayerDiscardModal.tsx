@@ -1,18 +1,20 @@
 'use client';
 
-import { X, RotateCcw } from 'lucide-react';
-import { Player } from '../types';
+import { X, RotateCcw, ZoomIn } from 'lucide-react';
+import { Player, ICard } from '../types';
 
 interface PlayerDiscardModalProps {
   player: Player;
   onClose: () => void;
   onRecoverCard: (playerId: string, cardIndex: number) => void;
+  onViewCard?: (card: ICard) => void;
 }
 
 export default function PlayerDiscardModal({
   player,
   onClose,
-  onRecoverCard
+  onRecoverCard,
+  onViewCard
 }: PlayerDiscardModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
@@ -39,8 +41,14 @@ export default function PlayerDiscardModal({
             <div className="grid grid-cols-4 gap-4">
               {player.discard.map((card, i) => (
                 <div key={i} className="relative">
-                  <div className="aspect-[2/3] rounded-lg border border-slate-600 overflow-hidden bg-black">
+                  <div 
+                    className="aspect-[2/3] rounded-lg border border-slate-600 overflow-hidden bg-black relative group cursor-pointer"
+                    onClick={() => onViewCard && onViewCard(card)}
+                  >
                     <img src={card.imgUrl || `https://placehold.co/100x150/222/999?text=${card.name?.charAt(0) || '?'}`} className="w-full h-full object-cover"/>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn size={20} className="text-white"/>
+                    </div>
                   </div>
                   <div className="text-xs text-center truncate mt-2 text-slate-300">{card.name}</div>
                   <button 

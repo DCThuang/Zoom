@@ -1,7 +1,7 @@
 'use client';
 
-import { Heart, Shield, Utensils, Coins, X, Plus, Trash2, CreditCard, Package, Backpack, Zap } from 'lucide-react';
-import { Player, Equipment } from '../types';
+import { Heart, Shield, Utensils, Coins, X, Plus, Trash2, CreditCard, Package, Backpack, Zap, ZoomIn } from 'lucide-react';
+import { Player, Equipment, ICard } from '../types';
 import StatMini from './StatMini';
 
 interface PlayerCardProps {
@@ -15,6 +15,7 @@ interface PlayerCardProps {
   onEquipmentClick: (idx: number) => void;
   onUpdateEquipAmmo: (equipIdx: number, delta: number) => void;
   onViewSkillDeck: () => void;
+  onViewCard?: (card: ICard) => void;
 }
 
 export default function PlayerCard({ 
@@ -27,7 +28,8 @@ export default function PlayerCard({
   onClick, 
   onEquipmentClick, 
   onUpdateEquipAmmo,
-  onViewSkillDeck
+  onViewSkillDeck,
+  onViewCard
 }: PlayerCardProps) {
   const totalHand = player.handResource.length + player.handSkill.length;
   
@@ -39,8 +41,17 @@ export default function PlayerCard({
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full border-2 overflow-hidden bg-black shrink-0" style={{ borderColor: player.color }}>
+        <div 
+          className="w-12 h-12 rounded-full border-2 overflow-hidden bg-black shrink-0 relative group cursor-pointer" 
+          style={{ borderColor: player.color }}
+          onClick={(e) => { e.stopPropagation(); if (player.roleCard && onViewCard) onViewCard(player.roleCard); }}
+        >
           {player.imgUrl && <img src={player.imgUrl} className="w-full h-full object-cover" />}
+          {player.roleCard && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn size={14} className="text-white"/>
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-bold text-base truncate" style={{ color: player.color }}>{player.name}</div>
@@ -92,10 +103,13 @@ export default function PlayerCard({
               >
                 {/* Equipment thumbnail - clickable for details */}
                 <div 
-                  onClick={(e) => { e.stopPropagation(); onEquipmentClick(i); }}
-                  className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden cursor-pointer hover:border-amber-500 shrink-0"
+                  onClick={(e) => { e.stopPropagation(); if (onViewCard) onViewCard(eq.card); else onEquipmentClick(i); }}
+                  className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden cursor-pointer hover:border-amber-500 shrink-0 relative group"
                 >
                   {eq.card.imgUrl ? <img src={eq.card.imgUrl} className="w-full h-full object-cover"/> : <Package size={20} className="w-full h-full p-2 text-slate-600"/>}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ZoomIn size={12} className="text-white"/>
+                  </div>
                 </div>
                 
                 {/* Equipment info */}

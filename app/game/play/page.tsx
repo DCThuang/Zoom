@@ -1611,6 +1611,7 @@ function GamePlayPageContent() {
           onEquipmentClick={(playerId, idx) => setEquipmentPreview({ playerId, equipIndex: idx })}
           onUpdateEquipAmmo={(playerId, equipIdx, delta) => updateEquipmentAmmo(playerId, equipIdx, delta)}
           onViewSkillDeck={(playerId) => setViewingSkillDeckPlayerId(playerId)}
+          onViewCard={(card) => setViewingCard(card)}
         />
 
         {/* Center: Map */}
@@ -2117,6 +2118,7 @@ function GamePlayPageContent() {
             player={player}
             onClose={() => setPlayerDiscardModal(null)}
             onRecoverCard={recoverCardFromDiscard}
+            onViewCard={(card) => { setPlayerDiscardModal(null); setViewingCard(card); }}
           />
         );
       })()}

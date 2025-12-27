@@ -340,8 +340,14 @@ export default function PlayerDetailModal({
                 ) : (
                   // 显示最后弃掉的一张（索引0是最新的），点击打开弹窗
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-16 shrink-0 rounded border border-slate-600 overflow-hidden bg-black">
+                    <div 
+                      className="w-12 h-16 shrink-0 rounded border border-slate-600 overflow-hidden bg-black relative group cursor-pointer"
+                      onClick={() => onViewCard(player.discard[0])}
+                    >
                       <img src={player.discard[0].imgUrl || `https://placehold.co/50x70/222/999?text=?`} className="w-full h-full object-cover"/>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ZoomIn size={14} className="text-white"/>
+                      </div>
                     </div>
                     <div className="flex-1">
                       <div className="text-sm text-slate-300">{player.discard[0].name}</div>
