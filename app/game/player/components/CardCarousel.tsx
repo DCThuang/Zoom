@@ -192,7 +192,7 @@ export default function CardCarousel({
                       setShowActions(false);
                     }}
                   >
-                    <div className="w-20 h-28 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
+                    <div className="w-24 h-32 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
                       <img
                         src={getCardDisplayUrl(card)}
                         alt={card.name || '卡牌'}
@@ -200,7 +200,7 @@ export default function CardCarousel({
                         draggable={false}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/80x112/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
+                          target.src = `https://placehold.co/96x128/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
                     </div>
@@ -215,7 +215,7 @@ export default function CardCarousel({
               onClick={() => setShowActions(!showActions)}
             >
               <div
-                className={`w-40 h-56 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
+                className={`w-44 h-64 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
                   showActions ? 'ring-2 ring-amber-400' : ''
                 }`}
                 style={{ borderColor: borderColor }}
@@ -227,7 +227,7 @@ export default function CardCarousel({
                   draggable={false}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = `https://placehold.co/160x224/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
+                    target.src = `https://placehold.co/180x260/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
                   }}
                 />
                 
@@ -301,7 +301,7 @@ export default function CardCarousel({
                       setShowActions(false);
                     }}
                   >
-                    <div className="w-20 h-28 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
+                    <div className="w-24 h-32 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
                       <img
                         src={getCardDisplayUrl(card)}
                         alt={card.name || '卡牌'}
@@ -309,7 +309,7 @@ export default function CardCarousel({
                         draggable={false}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/80x112/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
+                          target.src = `https://placehold.co/96x128/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
                     </div>
