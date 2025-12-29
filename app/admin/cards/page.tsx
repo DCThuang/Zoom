@@ -149,6 +149,13 @@ export default function CardAdminPage() {
     return cards;
   }, [cards, selectedType, selectedProfession]);
 
+  // 分页计算
+  const totalPages = Math.ceil(filteredCards.length / CARDS_PER_PAGE);
+  const paginatedCards = useMemo(() => {
+    const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
+    return filteredCards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+  }, [filteredCards, currentPage]);
+
   // 当过滤后页码超出范围时回退
   useEffect(() => {
     if (totalPages === 0) return;
@@ -156,13 +163,6 @@ export default function CardAdminPage() {
       setCurrentPage(totalPages);
     }
   }, [totalPages, currentPage, selectedType]);
-
-  // 分页计算
-  const totalPages = Math.ceil(filteredCards.length / CARDS_PER_PAGE);
-  const paginatedCards = useMemo(() => {
-    const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
-    return filteredCards.slice(startIndex, startIndex + CARDS_PER_PAGE);
-  }, [filteredCards, currentPage]);
 
   // 获取所有玩家角色卡和版本
   useEffect(() => {
