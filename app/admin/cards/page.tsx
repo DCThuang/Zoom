@@ -36,6 +36,9 @@ export default function CardAdminPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedType, setSelectedType] = useState<CardType | 'ALL'>('ALL');
   const [selectedProfession, setSelectedProfession] = useState<string>('ALL'); // 技能卡职业筛选
+  const [countEdits, setCountEdits] = useState<Record<string, number>>({}); // 技能卡张数快速编辑
+  const [savingCounts, setSavingCounts] = useState(false);
+  const [countMessage, setCountMessage] = useState('');
   
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -105,6 +108,12 @@ export default function CardAdminPage() {
       localStorage.setItem('cards.selectedProfession', selectedProfession);
   }, [selectedType, pageByType, selectedProfession]);
 
+  // 切换类型或职业时清空快捷张数编辑状态
+  useEffect(() => {
+    setCountEdits({});
+    setCountMessage('');
+  }, [selectedType, selectedProfession]);
+
   // Fetch Cards
   const fetchCards = async () => {
       setLoading(true);
@@ -143,8 +152,13 @@ export default function CardAdminPage() {
 
   // 过滤（技能卡支持职业筛选）
   const filteredCards = useMemo(() => {
-    if (selectedType === 'SKILL' && selectedProfession !== 'ALL') {
-      return cards.filter(card => card.role === selectedProfession);
+    if (selectedType === 'SKILL') {
+      if (selectedProfession === 'NONE') {
+        return cards.filter(card => card.type === 'SKILL' && !card.role);
+      }
+      if (selectedProfession !== 'ALL') {
+        return cards.filter(card => card.type === 'SKILL' && card.role === selectedProfession);
+      }
     }
     return cards;
   }, [cards, selectedType, selectedProfession]);
@@ -315,6 +329,52 @@ export default function CardAdminPage() {
     }
   };
 
+  const handleChangeSkillCount = (cardId: string, value: string) => {
+    const num = Math.max(0, Number(value));
+    if (Number.isNaN(num)) return;
+    setCountEdits(prev => ({ ...prev, [cardId]: num }));
+  };
+
+  const handleSaveSkillCounts = async () => {
+    if (selectedType !== 'SKILL') return;
+    const entries = Object.entries(countEdits).filter(([id]) => filteredCards.some(card => card._id === id));
+    if (entries.length === 0) {
+      setCountMessage('没有需要保存的张数修改');
+      return;
+    }
+    setSavingCounts(true);
+    setCountMessage('');
+    try {
+      const responses = await Promise.all(entries.map(async ([id, count]) => {
+        const res = await fetch(`/api/cards/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count })
+        });
+        const data = await res.json();
+        return { id, ok: res.ok && data.success, data };
+      }));
+
+      const failed = responses.filter(r => !r.ok);
+      setCards(prev => prev.map(card => {
+        const updated = responses.find(r => r.ok && r.data?.data?._id === card._id);
+        return updated ? { ...card, count: updated.data.data.count } : card;
+      }));
+
+      if (failed.length > 0) {
+        setCountMessage(`部分保存失败 (${failed.length}/${entries.length})`);
+      } else {
+        setCountMessage('张数已保存');
+        setCountEdits({});
+      }
+    } catch (error) {
+      console.error(error);
+      setCountMessage('保存失败，请稍后重试');
+    } finally {
+      setSavingCounts(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -466,6 +526,7 @@ export default function CardAdminPage() {
                                 className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-white"
                             >
                                 <option value="ALL">全部</option>
+                                <option value="NONE">无职业</option>
                                 {professionList.map(prof => (
                                     <option key={prof} value={prof}>{prof}</option>
                                 ))}
@@ -474,15 +535,35 @@ export default function CardAdminPage() {
                     )}
                 </div>
 
+                {selectedType === 'SKILL' && (
+                  <div className="flex flex-wrap items-center gap-3 mb-6 bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                    <div className="text-sm text-slate-300">
+                      当前筛选：{selectedProfession === 'ALL' ? '全部职业' : selectedProfession === 'NONE' ? '无职业' : selectedProfession}，直接修改张数后点击保存
+                    </div>
+                    <button
+                      onClick={handleSaveSkillCounts}
+                      disabled={savingCounts}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-60 rounded-lg text-white font-bold"
+                    >
+                      {savingCounts ? '保存中...' : '保存张数'}
+                    </button>
+                    {countMessage && (
+                      <div className="text-xs text-slate-400">
+                        {countMessage}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {loading ? (
                     <div className="text-center py-20 text-slate-500 animate-pulse">加载中...</div>
                 ) : (
                     <>
                         {/* 分页信息 */}
-                        {cards.length > 0 && (
+                        {filteredCards.length > 0 && (
                             <div className="mb-4 flex items-center justify-between">
                                 <div className="text-sm text-slate-500">
-                                    共 {cards.length} 张卡牌，当前显示 {(currentPage - 1) * CARDS_PER_PAGE + 1} - {Math.min(currentPage * CARDS_PER_PAGE, cards.length)} 张
+                                    共 {filteredCards.length} 张卡牌，当前显示 {(currentPage - 1) * CARDS_PER_PAGE + 1} - {Math.min(currentPage * CARDS_PER_PAGE, filteredCards.length)} 张
                                 </div>
                                 {totalPages > 1 && (
                                     <div className="flex items-center gap-2">
@@ -564,10 +645,22 @@ export default function CardAdminPage() {
                                         <div className="text-xs text-slate-500 truncate mt-1">
                                             {card.description || '暂无描述'}
                                         </div>
+                                        {card.type === 'SKILL' && (
+                                          <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-300">
+                                            <span className="text-slate-400">张数：{countEdits[card._id] ?? card.count ?? 0}</span>
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              value={countEdits[card._id] ?? card.count ?? 0}
+                                              onChange={(e) => handleChangeSkillCount(card._id, e.target.value)}
+                                              className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-right text-white"
+                                            />
+                                          </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
-                            {cards.length === 0 && (
+                            {filteredCards.length === 0 && (
                                 <div className="col-span-full text-center py-20 text-slate-600 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
                                     暂无卡牌数据
                                 </div>
