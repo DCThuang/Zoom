@@ -14,10 +14,12 @@ interface PlayedCardsDisplayProps {
 export default function PlayedCardsDisplay({ playedCard, onClear }: PlayedCardsDisplayProps) {
   const [viewingCard, setViewingCard] = useState<ICard | null>(null);
 
-  // 检查 playedCard 和 playedCard.card 是否存在
+  // 安全防御：确保数据完整，否则不渲染
   if (!playedCard || !playedCard.card) return null;
+  const safeCard = playedCard.card || {};
+  const safeName = safeCard.name || '未知卡牌';
 
-  const displayUrl = getCardDisplayUrl(playedCard.card);
+  const displayUrl = getCardDisplayUrl(safeCard);
 
   return (
     <>
@@ -27,18 +29,18 @@ export default function PlayedCardsDisplay({ playedCard, onClear }: PlayedCardsD
       <div 
           className="w-20 h-28 rounded border-2 overflow-hidden shadow-md shrink-0 cursor-pointer hover:ring-2 hover:ring-white/50 transition-all"
         style={{ borderColor: playedCard.playerColor }}
-          onDoubleClick={() => setViewingCard(playedCard.card)}
+          onDoubleClick={() => setViewingCard(safeCard as ICard)}
           title="双击查看详情"
       >
         <img 
             src={displayUrl}
-          alt={playedCard.card.name}
+          alt={safeName}
             className="w-full h-full object-contain bg-black"
         />
       </div>
       
       <div className="flex flex-col">
-        <span className="text-xs font-bold text-white truncate max-w-[70px]">{playedCard.card.name}</span>
+        <span className="text-xs font-bold text-white truncate max-w-[70px]">{safeName}</span>
         <span className="text-[10px]" style={{ color: playedCard.playerColor }}>
           {playedCard.playerName}
         </span>

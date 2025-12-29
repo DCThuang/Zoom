@@ -179,13 +179,17 @@ function GamePlayPageContent() {
   }, [selectedPlayer]);
 
   const handleRemotePlayedCard = useCallback((playedCard: PlayedCard) => {
-    console.log('[Main] Received played card from remote:', playedCard);
-    // 验证 playedCard 数据完整性
-    if (!playedCard || !playedCard.card) {
-      console.warn('[Main] Invalid played card data received');
-      return;
+    try {
+      console.log('[Main] Received played card from remote:', playedCard);
+      // 验证 playedCard 数据完整性
+      if (!playedCard || !playedCard.card) {
+        console.warn('[Main] Invalid played card data received');
+        return;
+      }
+      setGameState(prev => ({ ...prev, playedCard }));
+    } catch (err) {
+      console.error('[Main] handleRemotePlayedCard error', err);
     }
-    setGameState(prev => ({ ...prev, playedCard }));
   }, []);
 
   // WebSocket 连接
