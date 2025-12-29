@@ -165,7 +165,7 @@ export default function CardCarousel({
         >
           {/* 卡牌列表 */}
           <div
-            className="flex items-center justify-center py-4 relative"
+            className="flex items-center justify-center py-4 relative px-6 md:px-10"
             style={{
               transform: `translateX(${translateX * 0.5}px)`,
               transition: isDragging ? 'none' : 'transform 0.3s ease-out'
@@ -184,7 +184,7 @@ export default function CardCarousel({
                     style={{
                       transform: `scale(${scale})`,
                       opacity: opacity,
-                      marginRight: '-30px',
+                      marginRight: '-24px',
                       zIndex: 3 - i,
                     }}
                     onClick={() => {
@@ -192,7 +192,7 @@ export default function CardCarousel({
                       setShowActions(false);
                     }}
                   >
-                    <div className="w-24 h-32 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
+                    <div className="w-24 h-36 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
                       <img
                         src={getCardDisplayUrl(card)}
                         alt={card.name || '卡牌'}
@@ -200,7 +200,7 @@ export default function CardCarousel({
                         draggable={false}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/96x128/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
+                          target.src = `https://placehold.co/110x150/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
                     </div>
@@ -215,7 +215,7 @@ export default function CardCarousel({
               onClick={() => setShowActions(!showActions)}
             >
               <div
-                className={`w-44 h-64 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
+                className={`w-48 h-72 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
                   showActions ? 'ring-2 ring-amber-400' : ''
                 }`}
                 style={{ borderColor: borderColor }}
@@ -227,7 +227,7 @@ export default function CardCarousel({
                   draggable={false}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = `https://placehold.co/180x260/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
+                    target.src = `https://placehold.co/200x300/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
                   }}
                 />
                 
@@ -293,7 +293,7 @@ export default function CardCarousel({
                     style={{
                       transform: `scale(${scale})`,
                       opacity: opacity,
-                      marginLeft: '-30px',
+                      marginLeft: '-24px',
                       zIndex: 3 - i,
                     }}
                     onClick={() => {
@@ -301,7 +301,7 @@ export default function CardCarousel({
                       setShowActions(false);
                     }}
                   >
-                    <div className="w-24 h-32 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
+                    <div className="w-24 h-36 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
                       <img
                         src={getCardDisplayUrl(card)}
                         alt={card.name || '卡牌'}
@@ -309,7 +309,7 @@ export default function CardCarousel({
                         draggable={false}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/96x128/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
+                          target.src = `https://placehold.co/110x150/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
                         }}
                       />
                     </div>
