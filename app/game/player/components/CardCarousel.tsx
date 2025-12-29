@@ -167,55 +167,17 @@ export default function CardCarousel({
           <div
             className="flex items-center justify-center py-4 relative px-6 md:px-10"
             style={{
-              transform: `translateX(${translateX * 0.5}px)`,
+              transform: isDragging ? `translateX(${translateX * 0.5}px)` : 'translateX(0px)',
               transition: isDragging ? 'none' : 'transform 0.3s ease-out'
             }}
           >
-            {/* 左侧小卡牌 */}
-            <div className="flex items-center gap-1 px-2">
-              {cards.slice(Math.max(0, currentIndex - 3), currentIndex).reverse().map((card, i) => {
-                const realIndex = currentIndex - i - 1;
-                const scale = 0.5 - (i * 0.1);
-                const opacity = 0.6 - (i * 0.15);
-                return (
-                  <div
-                    key={`left-${realIndex}`}
-                    className="shrink-0 transition-all cursor-pointer"
-                    style={{
-                      transform: `scale(${scale})`,
-                      opacity: opacity,
-                      marginRight: '-24px',
-                      zIndex: 3 - i,
-                    }}
-                    onClick={() => {
-                      setCurrentIndex(realIndex);
-                      setShowActions(false);
-                    }}
-                  >
-                    <div className="w-24 h-36 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
-                      <img
-                        src={getCardDisplayUrl(card)}
-                        alt={card.name || '卡牌'}
-                        className="w-full h-full object-contain"
-                        draggable={false}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/110x150/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
             {/* 中间主卡牌 */}
             <div
               className={`shrink-0 transition-all duration-300 ${showActions ? 'scale-95' : ''}`}
               onClick={() => setShowActions(!showActions)}
             >
               <div
-                className={`w-48 h-72 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
+              className={`w-52 h-80 rounded-xl border-3 overflow-hidden bg-slate-900 shadow-2xl relative cursor-pointer ${
                   showActions ? 'ring-2 ring-amber-400' : ''
                 }`}
                 style={{ borderColor: borderColor }}
@@ -227,7 +189,7 @@ export default function CardCarousel({
                   draggable={false}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = `https://placehold.co/200x300/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
+                    target.src = `https://placehold.co/220x320/1e293b/64748b?text=${currentCard?.name?.charAt(0) || '?'}`;
                   }}
                 />
                 
@@ -278,44 +240,6 @@ export default function CardCarousel({
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* 右侧小卡牌 */}
-            <div className="flex items-center gap-1 px-2">
-              {cards.slice(currentIndex + 1, currentIndex + 4).map((card, i) => {
-                const realIndex = currentIndex + i + 1;
-                const scale = 0.5 - (i * 0.1);
-                const opacity = 0.6 - (i * 0.15);
-                return (
-                  <div
-                    key={`right-${realIndex}`}
-                    className="shrink-0 transition-all cursor-pointer"
-                    style={{
-                      transform: `scale(${scale})`,
-                      opacity: opacity,
-                      marginLeft: '-24px',
-                      zIndex: 3 - i,
-                    }}
-                    onClick={() => {
-                      setCurrentIndex(realIndex);
-                      setShowActions(false);
-                    }}
-                  >
-                    <div className="w-24 h-36 rounded-lg border-2 border-slate-600 overflow-hidden bg-slate-900 shadow-lg">
-                      <img
-                        src={getCardDisplayUrl(card)}
-                        alt={card.name || '卡牌'}
-                        className="w-full h-full object-contain"
-                        draggable={false}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://placehold.co/110x150/1e293b/64748b?text=${card.name?.charAt(0) || '?'}`;
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
