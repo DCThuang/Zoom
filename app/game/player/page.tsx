@@ -33,6 +33,8 @@ function PlayerMobilePageContent() {
   const [showPersonalDiscardModal, setShowPersonalDiscardModal] = useState(false);
   const [showPublicDiscardModal, setShowPublicDiscardModal] = useState(false);
   const [viewingCard, setViewingCard] = useState<ICard | null>(null);
+  // 序列化存档请求，避免快速操作时并发覆盖
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   
   // 防止循环同步
   const isRemoteUpdateRef = useRef(false);
@@ -193,7 +195,14 @@ function PlayerMobilePageContent() {
     return () => clearInterval(interval);
   }, [sessionId, selectedPlayerId, loadSession, isConnected]);
 
-  // 保存数据到服务器并发送 WebSocket 同步
+  // 保存数据到服务器并发送 WebSocket 同步（串行化，避免并发覆盖）
+  const enqueueSave = useCallback((task: () => Promise<void>) => {
+    saveQueueRef.current = saveQueueRef.current
+      .then(task)
+      .catch(err => console.error('save queue error', err));
+    return saveQueueRef.current;
+  }, []);
+
   const saveToServer = async (updatedPlayers: Player[], updatedGameState?: Partial<GameState>) => {
     if (!sessionId || !gameState) return;
     
@@ -219,25 +228,26 @@ function PlayerMobilePageContent() {
       setGameState(prev => prev ? { ...prev, ...updatedGameState } : prev);
     }
     
-    try {
-      const sessionData = {
-        players: updatedPlayers,
-        publicDiscard: newGameState.publicDiscard,
-        redDeck: newGameState.redDeck,
-        blueDeck: newGameState.blueDeck,
-        greenDeck: newGameState.greenDeck,
-      };
-      
-      await fetch(`/api/game-sessions/${sessionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionData)
-      });
-      
-      setLastSync(new Date());
-    } catch (err) {
-      console.error('保存失败:', err);
-    }
+    const sessionData = {
+      players: updatedPlayers,
+      publicDiscard: newGameState.publicDiscard,
+      redDeck: newGameState.redDeck,
+      blueDeck: newGameState.blueDeck,
+      greenDeck: newGameState.greenDeck,
+    };
+    
+    await enqueueSave(async () => {
+      try {
+        await fetch(`/api/game-sessions/${sessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionData)
+        });
+        setLastSync(new Date());
+      } catch (err) {
+        console.error('保存失败:', err);
+      }
+    });
   };
 
   // 获取当前选中的玩家
