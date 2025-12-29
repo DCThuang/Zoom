@@ -35,6 +35,7 @@ export default function CardAdminPage() {
   const [viewMode, setViewMode] = useState<'LIST' | 'EDIT' | 'CREATE'>('LIST');
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedType, setSelectedType] = useState<CardType | 'ALL'>('ALL');
+  const [selectedProfession, setSelectedProfession] = useState<string>('ALL'); // 技能卡职业筛选
   
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,8 +46,16 @@ export default function CardAdminPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   
-  // 分页状态
-  const [currentPage, setCurrentPage] = useState(1);
+  // 分页状态（按类型记忆）
+  const [pageByType, setPageByType] = useState<Record<string, number>>({ ALL: 1 });
+  const currentPage = pageByType[selectedType] ?? 1;
+  const setCurrentPage = (updater: number | ((p: number) => number)) => {
+    setPageByType(prev => {
+      const prevPage = prev[selectedType] ?? 1;
+      const nextPage = typeof updater === 'function' ? (updater as any)(prevPage) : updater;
+      return { ...prev, [selectedType]: nextPage };
+    });
+  };
   
   // 存储所有玩家角色卡（用于技能卡的职业选择）
   const [playerRoles, setPlayerRoles] = useState<Card[]>([]);
@@ -71,6 +80,30 @@ export default function CardAdminPage() {
   
   // File input ref for resetting
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 初始从 localStorage 恢复筛选与分页
+  useEffect(() => {
+      if (typeof window === 'undefined') return;
+      const savedType = localStorage.getItem('cards.selectedType');
+      const savedPage = localStorage.getItem('cards.pageByType');
+      const savedProfession = localStorage.getItem('cards.selectedProfession');
+      if (savedType) {
+        try { setSelectedType(savedType as any); } catch {}
+      }
+      if (savedPage) {
+        try { setPageByType(JSON.parse(savedPage)); } catch {}
+      }
+      if (savedProfession) {
+        setSelectedProfession(savedProfession);
+      }
+  }, []);
+
+  useEffect(() => {
+      if (typeof window === 'undefined') return;
+      localStorage.setItem('cards.selectedType', selectedType);
+      localStorage.setItem('cards.pageByType', JSON.stringify(pageByType));
+      localStorage.setItem('cards.selectedProfession', selectedProfession);
+  }, [selectedType, pageByType, selectedProfession]);
 
   // Fetch Cards
   const fetchCards = async () => {
@@ -105,16 +138,31 @@ export default function CardAdminPage() {
   useEffect(() => {
       if (viewMode === 'LIST') {
           fetchCards();
-          setCurrentPage(1); // 切换类型时重置分页
       }
   }, [viewMode, selectedType]);
 
+  // 过滤（技能卡支持职业筛选）
+  const filteredCards = useMemo(() => {
+    if (selectedType === 'SKILL' && selectedProfession !== 'ALL') {
+      return cards.filter(card => card.role === selectedProfession);
+    }
+    return cards;
+  }, [cards, selectedType, selectedProfession]);
+
+  // 当过滤后页码超出范围时回退
+  useEffect(() => {
+    if (totalPages === 0) return;
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage, selectedType]);
+
   // 分页计算
-  const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
+  const totalPages = Math.ceil(filteredCards.length / CARDS_PER_PAGE);
   const paginatedCards = useMemo(() => {
     const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
-    return cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
-  }, [cards, currentPage]);
+    return filteredCards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+  }, [filteredCards, currentPage]);
 
   // 获取所有玩家角色卡和版本
   useEffect(() => {
@@ -383,7 +431,7 @@ export default function CardAdminPage() {
 
                 <h1 className="text-3xl font-bold mb-6 text-amber-500">卡牌管理图鉴</h1>
 
-                <div className="flex flex-wrap gap-2 mb-8 bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <div className="flex flex-wrap gap-3 items-center mb-8 bg-slate-900 p-3 rounded-lg border border-slate-800">
                     <button
                         onClick={() => setSelectedType('ALL')}
                         className={`px-4 py-2 rounded font-bold whitespace-nowrap transition-colors ${
@@ -407,6 +455,23 @@ export default function CardAdminPage() {
                             {typeLabels[type]}
                         </button>
                     ))}
+
+                    {/* 技能卡职业筛选 */}
+                    {selectedType === 'SKILL' && (
+                        <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-xs text-slate-500">职业:</span>
+                            <select
+                                value={selectedProfession}
+                                onChange={(e) => setSelectedProfession(e.target.value)}
+                                className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-white"
+                            >
+                                <option value="ALL">全部</option>
+                                {professionList.map(prof => (
+                                    <option key={prof} value={prof}>{prof}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 {loading ? (
