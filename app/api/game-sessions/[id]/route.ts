@@ -3,10 +3,28 @@ import dbConnect from '@/lib/db';
 import GameSession from '@/models/GameSession';
 
 // GET - Get single game session
+// 支持 ?lite=true 参数，返回轻量数据（手机端使用，不含地图等大数据）
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
     await dbConnect();
+    
+    const { searchParams } = new URL(request.url);
+    const isLite = searchParams.get('lite') === 'true';
+    
+    if (isLite) {
+      // 轻量模式：只返回手机端需要的字段（玩家、牌堆、弃牌堆）
+      const session = await GameSession.findById(params.id)
+        .select('name campaignId campaignName players redDeck blueDeck greenDeck shopDeck publicDiscard gameStarted createdAt updatedAt');
+      
+      if (!session) {
+        return NextResponse.json({ success: false, error: 'Game session not found' }, { status: 404 });
+      }
+      
+      return NextResponse.json({ success: true, data: session });
+    }
+    
+    // 完整模式：返回所有数据（主持端使用）
     const session = await GameSession.findById(params.id);
     
     if (!session) {

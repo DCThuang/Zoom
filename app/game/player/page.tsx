@@ -38,7 +38,7 @@ function PlayerMobilePageContent() {
   const isRemoteUpdateRef = useRef(false);
   const clientIdRef = useRef(`player-${Date.now()}`);
 
-  // WebSocket 同步处理 - 智能合并，检查版本号防止旧数据覆盖
+  // WebSocket 同步处理 - 手机端只接收需要的数据（玩家、牌堆、弃牌堆）
   const handleRemoteSync = useCallback((data: { players: Player[]; gameState: Partial<GameState>; activeEnemies?: any[] }) => {
     console.log('[Player] Received remote sync');
     isRemoteUpdateRef.current = true;
@@ -65,8 +65,20 @@ function PlayerMobilePageContent() {
         });
       });
     }
+    
+    // 手机端只接收牌堆和弃牌堆数据，忽略地图、敌人等数据
     if (data.gameState) {
-      setGameState(prev => prev ? { ...prev, ...data.gameState } : prev);
+      const { redDeck, blueDeck, greenDeck, shopDeck, publicDiscard } = data.gameState;
+      setGameState(prev => {
+        if (!prev) return prev;
+        const updates: Partial<GameState> = {};
+        if (redDeck !== undefined) updates.redDeck = redDeck;
+        if (blueDeck !== undefined) updates.blueDeck = blueDeck;
+        if (greenDeck !== undefined) updates.greenDeck = greenDeck;
+        if (shopDeck !== undefined) updates.shopDeck = shopDeck;
+        if (publicDiscard !== undefined) updates.publicDiscard = publicDiscard;
+        return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+      });
     }
     
     setLastSync(new Date());
@@ -94,7 +106,7 @@ function PlayerMobilePageContent() {
     clientId: clientIdRef.current
   });
 
-  // 加载存档数据
+  // 加载存档数据 - 使用轻量接口，只获取手机端需要的数据
   const loadSession = useCallback(async () => {
     if (!sessionId) {
       setError('缺少游戏存档ID');
@@ -104,7 +116,8 @@ function PlayerMobilePageContent() {
     
     try {
       setSyncing(true);
-      const res = await fetch(`/api/game-sessions/${sessionId}`);
+      // 使用 ?lite=true 参数，只获取玩家、牌堆、弃牌堆等必要数据
+      const res = await fetch(`/api/game-sessions/${sessionId}?lite=true`);
       const data = await res.json();
       
       if (!data.success) {
@@ -122,30 +135,35 @@ function PlayerMobilePageContent() {
       }));
       setPlayers(restoredPlayers);
       
-      // 恢复游戏状态
+      // 恢复游戏状态 - 手机端只需要牌堆、弃牌堆等必要数据
+      // 不加载地图、敌人等数据，减少资源占用
       setGameState({
         campaignName: session.campaignName,
+        // 牌堆（手机端需要抽卡）
         redDeck: session.redDeck || [],
         blueDeck: session.blueDeck || [],
         greenDeck: session.greenDeck || [],
         shopDeck: session.shopDeck || [],
+        // 弃牌堆（手机端需要查看和取回）
         publicDiscard: session.publicDiscard || [],
-        enemyDeck: session.enemyDeck || [],
-        enemyDiscard: session.enemyDiscard || [],
-        supportDeck: session.supportDeck || [],
-        supportDiscard: session.supportDiscard || [],
-        bossDeck: session.bossDeck || [],
-        bossDiscard: session.bossDiscard || [],
-        daynightDeck: session.daynightDeck || [],
-        daynightDiscard: session.daynightDiscard || [],
-        specialCharacterDeck: session.specialCharacterDeck || [],
-        specialCharacterDiscard: session.specialCharacterDiscard || [],
-        mapCards: session.unplacedMapCards || [],
-        placedMap: session.placedMap || [],
-        terrainGrid: session.terrainGrid || [],
+        // 以下数据手机端不需要，使用空数组占位
+        enemyDeck: [],
+        enemyDiscard: [],
+        supportDeck: [],
+        supportDiscard: [],
+        bossDeck: [],
+        bossDiscard: [],
+        daynightDeck: [],
+        daynightDiscard: [],
+        specialCharacterDeck: [],
+        specialCharacterDiscard: [],
+        mapCards: [],
+        placedMap: [],
+        terrainGrid: [],
+        mapDiscard: [],
+        mapMarkers: [],
+        // 状态
         gameStarted: session.gameStarted || false,
-        mapDiscard: session.mapDiscard || [],
-        mapMarkers: session.mapMarkers || [],
         playedCard: null,
       });
       
@@ -178,9 +196,18 @@ function PlayerMobilePageContent() {
     // 合并游戏状态更新
     const newGameState = updatedGameState ? { ...gameState, ...updatedGameState } : gameState;
     
-    // 发送 WebSocket 同步
+    // 发送 WebSocket 同步 - 只发送手机端需要同步的数据，避免覆盖主持端的地图等数据
     if (isConnected && !isRemoteUpdateRef.current) {
-      sendSync({ players: updatedPlayers, gameState: newGameState });
+      // 手机端只同步：玩家数据、牌堆、弃牌堆
+      // 不同步地图相关数据（placedMap, terrainGrid, mapCards等），避免覆盖主持端的地图状态
+      const syncGameState: Partial<GameState> = {
+        publicDiscard: newGameState.publicDiscard,
+        redDeck: newGameState.redDeck,
+        blueDeck: newGameState.blueDeck,
+        greenDeck: newGameState.greenDeck,
+        shopDeck: newGameState.shopDeck,
+      };
+      sendSync({ players: updatedPlayers, gameState: syncGameState });
     }
     
     // 更新本地状态
