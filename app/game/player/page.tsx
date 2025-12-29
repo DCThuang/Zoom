@@ -77,7 +77,12 @@ function PlayerMobilePageContent() {
   }, []);
 
   const handleRemotePlayedCard = useCallback((playedCard: PlayedCard) => {
-    console.log('[Player] Received played card from remote');
+    console.log('[Player] Received played card from remote:', playedCard);
+    // 验证 playedCard 数据完整性
+    if (!playedCard || !playedCard.card) {
+      console.warn('[Player] Invalid played card data received');
+      return;
+    }
     setGameState(prev => prev ? { ...prev, playedCard } : prev);
   }, []);
 

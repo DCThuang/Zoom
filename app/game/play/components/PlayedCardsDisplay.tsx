@@ -14,7 +14,8 @@ interface PlayedCardsDisplayProps {
 export default function PlayedCardsDisplay({ playedCard, onClear }: PlayedCardsDisplayProps) {
   const [viewingCard, setViewingCard] = useState<ICard | null>(null);
 
-  if (!playedCard) return null;
+  // 检查 playedCard 和 playedCard.card 是否存在
+  if (!playedCard || !playedCard.card) return null;
 
   const displayUrl = getCardDisplayUrl(playedCard.card);
 
